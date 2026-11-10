@@ -314,6 +314,17 @@
       border-top: 1px solid var(--stone);
     }
     .result-line.sell-line .amount { font-size: 2rem; }
+    .slider-row { margin: 1rem 0 0; }
+    .slider-row .scale {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.35rem;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--gold);
+    }
     .empty-results { color: var(--muted); margin: 0; }
 
     .site-footer {
@@ -427,6 +438,8 @@
       .site-header { background: white; color: var(--navy); padding: 0 0 0.8rem; }
       .site-header .tagline, .no-print, .btn, .add-wrap, .actions,
       .btn-danger { display: none !important; }
+      .slider-row input[type="range"] { display: none !important; }
+      .slider-row { margin-top: 0.7rem; }
       .card { box-shadow: none; border: 0; padding: 0; margin: 0 0 1rem; break-inside: avoid; }
       .sup-row, .recipe-row { border: 0; padding: 0; background: transparent; }
       main { width: auto; margin: 0; }
@@ -523,6 +536,13 @@
               <span class="amount" id="sell-ex">$0.00</span>
             </div>
           </div>
+          <div class="slider-row">
+            <div class="scale">
+              <label class="field-label" for="food-cost-pct" style="margin:0">Food cost target</label>
+              <strong id="food-cost-pct-label">30%</strong>
+            </div>
+            <input type="range" id="food-cost-pct" min="20" max="45" step="1" value="30">
+          </div>
         </div>
         <div class="actions no-print">
           <button type="button" class="btn btn-gold" id="btn-print">Save PDF</button>
@@ -582,7 +602,8 @@
 
   const state = {
     dishName: "",
-    ingredients: []
+    ingredients: [],
+    foodCostPct: FOOD_COST_PCT
   };
 
   let rendering = false;
@@ -971,8 +992,11 @@
     });
 
     document.getElementById("total-cost").textContent = hasError && !lines.some((l) => l.cost != null) ? "—" : money(total);
+    const pct = Number(state.foodCostPct) || FOOD_COST_PCT;
+    document.getElementById("food-cost-pct").value = String(pct);
+    document.getElementById("food-cost-pct-label").textContent = pct + "%";
     const usableTotal = lines.reduce((s, l) => s + (l.cost || 0), 0);
-    const sellEx = roundCents(usableTotal / (FOOD_COST_PCT / 100));
+    const sellEx = pct > 0 ? roundCents(usableTotal / (pct / 100)) : 0;
     document.getElementById("sell-ex").textContent = money(sellEx);
   }
 
@@ -991,6 +1015,10 @@
       state.dishName = e.target.value;
     });
     document.getElementById("btn-add").addEventListener("click", () => addIngredient());
+    document.getElementById("food-cost-pct").addEventListener("input", (e) => {
+      state.foodCostPct = Number(e.target.value) || FOOD_COST_PCT;
+      renderResults();
+    });
     document.getElementById("btn-print").addEventListener("click", () => window.print());
     document.getElementById("btn-new").addEventListener("click", startNewDish);
   }
