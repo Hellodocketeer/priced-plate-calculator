@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14213D">
+  <meta name="description" content="Free food cost calculator from The Priced Plate. Cost a dish and see the sell price at a 30% food cost.">
+  <title>Food Cost Calculator · The Priced Plate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    :root {
+      --navy: #14213D;
+      --cream: #FAF7F2;
+      --gold: #B08D57;
+      --charcoal: #2B2B2B;
+      --stone: #E8E3DA;
+      --white: #ffffff;
+      --danger: #8B3A2A;
+      --muted: #6B645B;
+      --line: #DDD6C9;
+      --shadow: 0 8px 28px rgba(20, 33, 61, 0.08);
+      --serif: "Playfair Display", Georgia, serif;
+      --sans: "Lato", "Helvetica Neue", Arial, sans-serif;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--charcoal);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    img { max-width: 100%; }
+
+    .site-header {
+      background: var(--navy);
+      color: var(--cream);
+      text-align: center;
+      padding: 1.75rem 1.25rem 1.5rem;
+    }
+    .site-header h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: clamp(1.35rem, 3.6vw, 1.85rem);
+      margin: 0;
+      letter-spacing: 0.01em;
+      line-height: 1.25;
+    }
+    .site-header .rule {
+      width: 48px;
+      height: 2px;
+      background: var(--gold);
+      margin: 0.85rem auto 0.75rem;
+      border: 0;
+    }
+    .tagline {
+      margin: 0;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      color: #E8E3DA;
+    }
+
+    main {
+      width: min(920px, calc(100% - 2rem));
+      margin: 1.5rem auto 3rem;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--stone);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.15rem 1.35rem;
+      margin-bottom: 1.15rem;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0 0 0.35rem;
+    }
+    h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.45rem;
+      color: var(--navy);
+      margin: 0 0 0.85rem;
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: -0.4rem 0 1rem;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(176, 141, 87, 0.22);
+      background: var(--white);
+    }
+    .dish-name input {
+      font-family: var(--serif);
+      font-size: 1.25rem;
+      padding: 0.8rem 0.9rem;
+      background: var(--white);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.35rem;
+    }
+    .saved-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.85rem;
+      align-items: center;
+    }
+    .saved-row select { flex: 1 1 180px; background: var(--white); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0.7rem 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-decoration: none;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .btn svg { width: 18px; height: 18px; flex: 0 0 18px; }
+    .btn-primary {
+      background: var(--navy);
+      color: var(--cream);
+    }
+    .btn-primary:hover { background: #1c2d52; }
+    .btn-gold {
+      background: var(--gold);
+      color: var(--navy);
+    }
+    .btn-gold:hover { background: #c09c68; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--navy);
+      border-color: var(--line);
+    }
+    .btn-ghost:hover { border-color: var(--gold); background: var(--cream); }
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border-color: transparent;
+      padding: 0.45rem;
+      min-width: 40px;
+      min-height: 40px;
+    }
+    .btn-danger:hover { background: #f8ece9; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-block { width: 100%; }
+
+    .ing-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .ing-row {
+      border: 1px solid var(--stone);
+      border-radius: 10px;
+      background: var(--cream);
+      padding: 0.85rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.55rem 0.6rem;
+    }
+    .ing-row.matched { box-shadow: inset 3px 0 0 var(--gold); }
+    .ing-row.warn { box-shadow: inset 3px 0 0 var(--danger); background: #fbf6f4; }
+    .ing-row .top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.4rem;
+      align-items: start;
+    }
+    .ing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.55rem 0.6rem;
+    }
+    .money {
+      display: flex;
+      align-items: center;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .money:focus-within {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(176, 141, 87, 0.22);
+    }
+    .money span {
+      padding: 0 0 0 0.7rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .money input {
+      border: 0 !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      border-radius: 0;
+      padding-left: 0.35rem;
+    }
+    .line-cost {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.92rem;
+      padding-top: 0.15rem;
+    }
+    .line-cost strong { color: var(--navy); font-variant-numeric: tabular-nums; }
+    .line-msg { color: var(--danger); font-size: 0.85rem; margin: 0; }
+
+    .add-wrap { margin-top: 0.9rem; }
+
+    .camera-btn { width: 100%; padding: 0.95rem 1rem; font-size: 1rem; }
+    .file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .photo-preview {
+      display: none;
+      margin-top: 0.9rem;
+      gap: 0.85rem;
+      align-items: start;
+    }
+    .photo-preview.visible { display: flex; }
+    .photo-preview img {
+      width: 96px;
+      height: 96px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--stone);
+      background: var(--stone);
+    }
+    .photo-meta { font-size: 0.9rem; color: var(--muted); }
+
+    .progress {
+      display: none;
+      margin-top: 0.9rem;
+    }
+    .progress.visible { display: block; }
+    .progress-label { font-size: 0.9rem; color: var(--navy); margin-bottom: 0.35rem; }
+    .bar {
+      height: 6px;
+      background: var(--stone);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--gold);
+      transition: width 0.2s ease;
+    }
+
+    .ocr-box { margin-top: 1rem; display: none; }
+    .ocr-box.visible { display: block; }
+    textarea {
+      min-height: 8.5rem;
+      resize: vertical;
+      line-height: 1.45;
+    }
+    .unmatched { margin-top: 0.85rem; display: none; }
+    .unmatched.visible { display: block; }
+    .unmatched ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+    .unmatched li { margin: 0.2rem 0; }
+    .unmatched .why { color: var(--muted); }
+
+    .results-body { }
+    .cost-table { width: 100%; border-collapse: collapse; margin: 0.2rem 0 1rem; }
+    .cost-table th {
+      text-align: left;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--stone);
+    }
+    .cost-table th:last-child, .cost-table td:last-child { text-align: right; }
+    .cost-table td {
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--stone);
+      font-variant-numeric: tabular-nums;
+      vertical-align: top;
+    }
+    .cost-table .qty { color: var(--muted); font-size: 0.9rem; }
+    .total-row td {
+      border-bottom: 0;
+      padding-top: 0.85rem;
+      font-weight: 700;
+      color: var(--navy);
+      font-size: 1.05rem;
+    }
+    .slider-row { margin: 0.4rem 0 1.1rem; }
+    .slider-row .scale {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.35rem;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--gold);
+    }
+    .sell-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+    .sell {
+      border: 1px solid var(--stone);
+      background: var(--cream);
+      border-radius: 10px;
+      padding: 0.9rem 1rem 1rem;
+    }
+    .sell .which {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin: 0 0 0.2rem;
+    }
+    .sell .amount {
+      font-family: var(--serif);
+      font-size: 2rem;
+      color: var(--navy);
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+    .sell p { margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--muted); }
+    .empty-results { color: var(--muted); margin: 0; }
+
+    .lead-form { display: grid; gap: 0.75rem; }
+    .consent {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      font-size: 0.92rem;
+    }
+    .consent input { margin-top: 0.2rem; accent-color: var(--navy); }
+    .form-error { color: var(--danger); font-size: 0.88rem; margin: 0; display: none; }
+    .form-error.visible { display: block; }
+
+    .site-footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+      padding: 0 1rem 2.5rem;
+    }
+    .site-footer a { color: var(--navy); text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; }
+
+
+
+    /* Welcome / email gate — shown before the calculator on first visit */
+    html:not(.unlocked) #app { display: none !important; }
+    html.unlocked #welcome { display: none !important; }
+    #welcome {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #welcome .welcome-main {
+      width: min(640px, calc(100% - 2rem));
+      margin: 1.25rem auto 2rem;
+      flex: 1;
+    }
+    #welcome .welcome-card {
+      background: var(--white);
+      border: 1px solid var(--stone);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.15rem 1.1rem 0.6rem;
+    }
+    #welcome .welcome-line {
+      margin: 0 0 0.85rem;
+      color: var(--charcoal);
+      font-size: 1rem;
+    }
+    #welcome iframe {
+      display: block;
+      width: 100%;
+      min-height: 720px;
+      border: 0;
+      background: transparent;
+    }
+    #welcome .form-fallback {
+      text-align: center;
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0.4rem 0 1rem;
+    }
+    #welcome .form-fallback a { color: var(--navy); }
+    @media print {
+      #welcome { display: none !important; }
+    }
+
+    .how {
+      background: var(--white);
+      border: 1px solid var(--stone);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1rem 1.15rem 1.05rem;
+      margin-bottom: 1.15rem;
+    }
+    .how h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.55rem;
+    }
+    .how ol {
+      margin: 0;
+      padding-left: 1.2rem;
+    }
+    .how li {
+      margin: 0.2rem 0;
+      padding-left: 0.2rem;
+    }
+    @media (min-width: 760px) {
+      .how { padding: 1.15rem 1.4rem 1.15rem; }
+    }
+    @media print {
+      .how { display: none !important; }
+    }
+
+    @media (min-width: 760px) {
+      .card { padding: 1.5rem 1.6rem 1.6rem; }
+      .ing-row {
+        grid-template-columns: minmax(8rem, 1.4fr) 7.6rem 6.8rem 5.4rem 7.6rem 2.6rem;
+        align-items: end;
+        background: var(--white);
+      }
+      .ing-row .top { display: contents; }
+      .ing-row .top > div { order: 1; }
+      .ing-grid { display: contents; }
+      .ing-grid > div:nth-child(1) { order: 2; }
+      .ing-grid > div:nth-child(2) { order: 3; }
+      .ing-grid > div:nth-child(3) { order: 4; }
+      .ing-grid > div:nth-child(4) { order: 5; }
+      .ing-row .top .btn-danger { order: 6; margin-bottom: 2px; }
+      .line-cost, .line-msg { order: 7; grid-column: 1 / -1; }
+      .sell-grid { grid-template-columns: 1fr 1fr; }
+      .camera-btn { width: auto; }
+    }
+
+    @media print {
+      body { background: white; }
+      .site-header { background: white; color: var(--navy); padding: 0 0 0.8rem; }
+      .site-header .tagline, .no-print, .btn, .add-wrap, .camera-btn,
+      .photo-preview, .progress, .ocr-box, .toolbar, .saved-row,
+      .lead-form, .file-input, .btn-danger { display: none !important; }
+      .card { box-shadow: none; border: 0; padding: 0; margin: 0 0 1rem; break-inside: avoid; }
+      .ing-row { border: 0; padding: 0; background: transparent; }
+      main { width: auto; margin: 0; }
+      .site-footer { padding-bottom: 0; }
+    }
+  </style>
+  <script>
+    (function () {
+      try {
+        var q = /(?:^|[?&])lead=1(?:&|$)/.test(location.search);
+        var raw = localStorage.getItem("tpp-food-cost-calculator-unlocked-v2");
+        var saved = raw && JSON.parse(raw);
+        if (q || (saved && saved.unlocked)) document.documentElement.classList.add("unlocked");
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+
+  <div id="welcome">
+    <header class="site-header">
+      <h1>The Priced Plate · Food Cost Calculator</h1>
+      <hr class="rule">
+      <p class="tagline">Every plate, exactly costed.</p>
+    </header>
+    <div class="welcome-main">
+      <div class="welcome-card">
+        <p class="welcome-line">Cost a dish and see the price that meets a 30% food cost.</p>
+        <iframe id="lead-iframe" title="Leave your details to use the calculator" loading="eager"></iframe>
+        <p class="form-fallback">If the form doesn’t load, <a id="lead-fallback" href="#" target="_blank" rel="noopener">open it in a new tab</a>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="app">
+  <header class="site-header">
+    <h1>The Priced Plate · Food Cost Calculator</h1>
+    <hr class="rule">
+    <p class="tagline">Every plate, exactly costed.</p>
+  </header>
+
+  <main>
+    <section class="how no-print" aria-labelledby="how-heading">
+      <h2 id="how-heading">How it works</h2>
+      <ol>
+        <li>Add your supplier prices: ingredient, unit, price.</li>
+        <li>Name your dish.</li>
+        <li>Snap or upload your recipe, or type the amounts.</li>
+        <li>See your dish cost and the price to charge for 30% food cost.</li>
+      </ol>
+    </section>
+
+    <section class="card dish-name" aria-labelledby="dish-label">
+      <label class="field-label" id="dish-label" for="dish-name">Dish name</label>
+      <p class="hint">Give this plate a name so you can save it and find it later.</p>
+      <input type="text" id="dish-name" placeholder="e.g. Bacon &amp; Egg Roll" autocomplete="off">
+      <div class="saved-row no-print">
+        <label class="file-input" for="saved-dishes">Saved dishes</label>
+        <select id="saved-dishes" aria-label="Saved dishes">
+          <option value="">Saved dishes</option>
+        </select>
+        <button type="button" class="btn btn-ghost" id="btn-load">Load</button>
+        <button type="button" class="btn btn-ghost" id="btn-delete-saved">Delete</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="supplier-heading">
+      <p class="section-label">Ingredients</p>
+      <h2 id="supplier-heading">Supplier prices</h2>
+      <p class="hint">One line per ingredient: what you buy, the unit on the invoice (kg, L, each), and the cost price for that unit.</p>
+      <div id="ing-list" class="ing-list"></div>
+      <div class="add-wrap">
+        <button type="button" class="btn btn-ghost" id="btn-add">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Add ingredient
+        </button>
+      </div>
+    </section>
+
+    <section class="card no-print" aria-labelledby="recipe-heading">
+      <p class="section-label">Recipe photo</p>
+      <h2 id="recipe-heading">Upload a recipe</h2>
+      <p class="hint">We’ll read the amounts and match them only to the list above. Or type the quantities yourself. You can fix the text and press Re-match.</p>
+      <input class="file-input" id="recipe-file" type="file" accept="image/*" capture="environment">
+      <button type="button" class="btn btn-primary camera-btn" id="btn-camera">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M4 8h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z"/>
+          <circle cx="12" cy="14" r="3.5"/>
+        </svg>
+        Take photo or upload recipe
+      </button>
+      <div class="photo-preview" id="photo-preview">
+        <img id="photo-thumb" alt="Recipe preview">
+        <div class="photo-meta">
+          <div id="photo-name"></div>
+          <button type="button" class="btn btn-ghost" id="btn-clear-photo" style="margin-top:0.5rem">Remove photo</button>
+        </div>
+      </div>
+      <div class="progress" id="ocr-progress" role="status" aria-live="polite">
+        <div class="progress-label" id="ocr-progress-label">Reading the recipe…</div>
+        <div class="bar"><span id="ocr-bar"></span></div>
+      </div>
+      <div class="ocr-box" id="ocr-box">
+        <label class="field-label" for="ocr-text">Text read from the photo</label>
+        <textarea id="ocr-text" spellcheck="true"></textarea>
+        <div class="toolbar" style="margin-top:0.65rem">
+          <button type="button" class="btn btn-gold" id="btn-rematch">Re-match</button>
+        </div>
+        <div class="unmatched" id="unmatched">
+          <p class="section-label">Not costed</p>
+          <ul id="unmatched-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="results-card" aria-labelledby="results-heading">
+      <p class="section-label">This dish</p>
+      <h2 id="results-heading">Cost and sell price</h2>
+      <p class="hint">What it costs to make, and what to charge so food cost lands at your target (30% to start).</p>
+      <div id="results-body">
+        <p class="empty-results" id="results-empty">Add quantities, or upload a recipe, to cost this dish.</p>
+        <div id="results-filled" hidden>
+          <table class="cost-table" id="cost-table">
+            <thead>
+              <tr><th>Ingredient</th><th>Cost</th></tr>
+            </thead>
+            <tbody id="cost-tbody"></tbody>
+            <tfoot>
+              <tr class="total-row"><td>Total cost to make</td><td id="total-cost"></td></tr>
+            </tfoot>
+          </table>
+          <div class="slider-row no-print">
+            <div class="scale">
+              <label class="field-label" for="food-cost-pct" style="margin:0">Food cost target</label>
+              <strong id="food-cost-pct-label">30%</strong>
+            </div>
+            <input type="range" id="food-cost-pct" min="15" max="50" step="1" value="30">
+          </div>
+          <div class="sell-grid">
+            <div class="sell">
+              <p class="which">Recommended sell price, ex GST</p>
+              <div class="amount" id="sell-ex">$0.00</div>
+              <p>The price that meets the food cost target, before GST.</p>
+            </div>
+            <div class="sell">
+              <p class="which">Recommended sell price, inc GST (10%)</p>
+              <div class="amount" id="sell-inc">$0.00</div>
+              <p>The same price with 10% GST added.</p>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar no-print" style="margin-top:1.15rem">
+          <button type="button" class="btn btn-gold" id="btn-save">Save dish</button>
+          <button type="button" class="btn btn-ghost" id="btn-new">New dish</button>
+          <button type="button" class="btn btn-ghost" id="btn-print">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z"/></svg>
+            Print / save PDF
+          </button>
+        </div>
+        <p class="form-error" id="save-msg" style="color:var(--navy)"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    Free tool from The Priced Plate · <a href="mailto:Robert@pricedplate.com">Robert@pricedplate.com</a>
+  </footer>
+  </div>
+
+  <script>
+  /* ===== CONFIG — edit these before going live =====
+     EMAIL_GATE: set to false to skip the welcome screen and open the calculator at once.
+     MONDAY_FORM_EMBED: public WorkForm URL (this is the shareable form link, not an API token).
+     After a successful form submit, monday redirects back here with ?lead=1 and we unlock.
+     LEAD_ENDPOINT: optional extra hook. Leave empty to only log to the console. */
+  const EMAIL_GATE = true;
+  const MONDAY_FORM_EMBED = "https://forms.monday.com/forms/embed/fcec2f109acc7703ff54bda7f7e9688b?r=apse2";
+  const MONDAY_FORM_LINK = "https://wkf.ms/4iPuClr";
+  const LEAD_ENDPOINT = "";
+  const DEFAULT_FOOD_COST_PCT = 30;
+  const GST_RATE = 0.10;
+  const STORAGE_KEY = "tpp-food-cost-calculator-v1";
+  const LEAD_KEY = "tpp-food-cost-calculator-unlocked-v2";
+
+  /**
+   * Hook for the mailing list. Called after a valid lead is captured.
+   * If LEAD_ENDPOINT is empty, nothing is sent anywhere (console log only).
+   */
+  async function submitLead(lead) {
+    console.log("submitLead", lead);
+    if (!LEAD_ENDPOINT) return;
+    try {
+      await fetch(LEAD_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead)
+      });
+    } catch (err) {
+      console.warn("submitLead failed", err);
+    }
+  }
+
+  const UNITS = [
+    { value: "g", label: "g", group: "mass", toBase: 1 },
+    { value: "kg", label: "kg", group: "mass", toBase: 1000 },
+    { value: "ml", label: "mL", group: "volume", toBase: 1 },
+    { value: "l", label: "L", group: "volume", toBase: 1000 },
+    { value: "each", label: "each / unit", short: "each", group: "count", toBase: 1 }
+  ];
+  const UNIT_MAP = Object.fromEntries(UNITS.map((u) => [u.value, u]));
+  const UNIT_ALIASES = {
+    g: "g", gram: "g", grams: "g", gm: "g", gms: "g",
+    kg: "kg", kilo: "kg", kilos: "kg", kilogram: "kg", kilograms: "kg",
+    ml: "ml", mls: "ml", millilitre: "ml", milliliter: "ml",
+    millilitres: "ml", milliliters: "ml",
+    l: "l", lt: "l", ltr: "l", litre: "l", liter: "l", litres: "l", liters: "l",
+    each: "each", unit: "each", units: "each", pc: "each", pcs: "each",
+    piece: "each", pieces: "each", whole: "each", item: "each", items: "each",
+    egg: "each", eggs: "each"
+  };
+  const UNIT_PATTERN = "kg|kilograms?|kilos?|grams?|gms?|g|millilitres?|milliliters?|mls?|ml|litres?|liters?|ltrs?|ltr|lt|l|units?|pieces?|pcs?|pc|items?|item|whole|each";
+  const STOPWORDS = new Set(["a", "an", "of", "the", "and", "with", "for", "to", "in", "on", "or", "plus"]);
+
+  const state = {
+    dishName: "",
+    ingredients: [],
+    ocrText: "",
+    unmatched: [],
+    photoUrl: "",
+    photoName: "",
+    foodCostPct: DEFAULT_FOOD_COST_PCT,
+    savedDishes: [],
+    ocrBusy: false
+  };
+
+  let tesseractWorker = null;
+  let saveTimer = 0;
+
+  function uid() {
+    return "i-" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function money(n) {
+    if (!Number.isFinite(n)) return "—";
+    return n.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
+  }
+
+  function parseNumber(value) {
+    if (typeof value === "number") return value;
+    const t = String(value ?? "").trim().replace(/\$/g, "").replace(/,/g, "");
+    if (!t || t === "-" || t === ".") return NaN;
+    return Number(t);
+  }
+
+  function roundCents(n) {
+    return Math.round(n * 100) / 100;
+  }
+
+  function unitOptions(selected) {
+    return UNITS.map((u) => {
+      const sel = u.value === selected ? " selected" : "";
+      return `<option value="${u.value}"${sel}>${u.label}</option>`;
+    }).join("");
+  }
+
+  function resolveUnit(raw) {
+    if (!raw) return null;
+    const key = String(raw).trim().toLowerCase().replace(/\./g, "");
+    return UNIT_ALIASES[key] || null;
+  }
+
+  function unitKey(unit) {
+    if (unit == null || unit === "") return null;
+    if (UNIT_MAP[unit]) return unit;
+    return resolveUnit(unit);
+  }
+
+  function convertQty(qty, fromUnit, toUnit) {
+    const from = UNIT_MAP[unitKey(fromUnit)];
+    const to = UNIT_MAP[unitKey(toUnit)];
+    if (!from || !to) return { error: "unknown" };
+    if (from.group !== to.group) return { error: "incompatible" };
+    return { value: (qty * from.toBase) / to.toBase };
+  }
+
+  function lineCost(ing) {
+    const price = parseNumber(ing.price);
+    const qty = parseNumber(ing.qty);
+    if (!ing.name || String(ing.name).trim() === "") return { empty: true };
+    if (!Number.isFinite(qty) || qty === 0) return { unused: true };
+    if (!Number.isFinite(price)) return { error: "Add a cost price to cost this line." };
+    const converted = convertQty(qty, ing.qtyUnit, ing.priceUnit);
+    if (converted.error === "incompatible") {
+      const from = UNIT_MAP[ing.qtyUnit];
+      const to = UNIT_MAP[ing.priceUnit];
+      return {
+        error: `Can't convert ${from ? from.label : ing.qtyUnit} to ${to ? to.label : ing.priceUnit} — check the unit on the price and the unit on the quantity.`
+      };
+    }
+    if (converted.error) return { error: "Check the units on this line." };
+    return { value: converted.value * price, qty, qtyUnit: ing.qtyUnit, priceUnit: ing.priceUnit };
+  }
+
+  function normalizeName(s) {
+    return String(s || "")
+      .toLowerCase()
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function stem(word) {
+    if (word.length <= 3) return word;
+    if (word.endsWith("ies") && word.length > 5) return word.slice(0, -3) + "y";
+    if (/(ches|shes|ses|xes|zes)$/.test(word)) return word.slice(0, -2);
+    if (word.endsWith("oes") && word.length > 4) return word.slice(0, -2);
+    if (word.endsWith("s") && !word.endsWith("ss") && !word.endsWith("us")) return word.slice(0, -1);
+    return word;
+  }
+
+  function tokens(s) {
+    return normalizeName(s)
+      .split(" ")
+      .filter((w) => w && !STOPWORDS.has(w))
+      .map(stem)
+      .filter(Boolean);
+  }
+
+  function scoreMatch(lineName, ingName) {
+    const a = tokens(lineName);
+    const b = tokens(ingName);
+    if (!a.length || !b.length) return 0;
+    const aSet = new Set(a);
+    const bSet = new Set(b);
+    const overlap = b.filter((t) => aSet.has(t));
+    const overlapA = a.filter((t) => bSet.has(t));
+    if (!overlap.length) {
+      // Partial word: "baconrashers" vs "bacon", or "rashers" containing nothing
+      const joinedA = a.join("");
+      const joinedB = b.join("");
+      if (joinedA.includes(joinedB) || joinedB.includes(joinedA)) {
+        const shorter = Math.min(joinedA.length, joinedB.length);
+        if (shorter >= 4) return shorter * 2;
+      }
+      return 0;
+    }
+    // Prefer cases where the ingredient name is fully found in the line
+    const allIngInLine = overlap.length === b.length;
+    const allLineInIng = overlapA.length === a.length;
+    let score = overlap.reduce((n, t) => n + t.length, 0) * 4;
+    if (allIngInLine) score += 20 + b.join("").length;
+    if (allLineInIng) score += 12;
+    if (normalizeName(lineName) === normalizeName(ingName)) score += 50;
+    return score;
+  }
+
+  function bestIngredient(lineName, ingredients) {
+    let best = null;
+    let bestScore = 0;
+    for (const ing of ingredients) {
+      if (!ing.name || !String(ing.name).trim()) continue;
+      const score = scoreMatch(lineName, ing.name);
+      if (score > bestScore) {
+        bestScore = score;
+        best = ing;
+      }
+    }
+    // Weak matches (a short shared syllable) are ignored
+    if (bestScore < 8) return null;
+    return best;
+  }
+
+  function parseRecipeLine(raw) {
+    const line = String(raw || "").replace(/^\s*(?:[•\-*]|\d+[.)])\s+/, "").replace(/\s+/g, " ").trim();
+    if (!line) return { kind: "empty", raw };
+    const unitRe = UNIT_PATTERN;
+
+    let m = line.match(new RegExp("^(\\d+(?:\\.\\d+)?)\\s*(" + unitRe + ")\\s+(?:of\\s+)?(.+)$", "i"));
+    if (m && resolveUnit(m[2])) {
+      return { kind: "item", raw, line, qty: Number(m[1]), unit: resolveUnit(m[2]), name: m[3].trim() };
+    }
+    m = line.match(new RegExp("^(\\d+(?:\\.\\d+)?)(" + unitRe + ")(.+)$", "i"));
+    if (m && resolveUnit(m[2])) {
+      return { kind: "item", raw, line, qty: Number(m[1]), unit: resolveUnit(m[2]), name: m[3].trim() };
+    }
+    m = line.match(new RegExp("^(.+?)\\s+(\\d+(?:\\.\\d+)?)\\s*(" + unitRe + ")$", "i"));
+    if (m && resolveUnit(m[3])) {
+      return { kind: "item", raw, line, qty: Number(m[2]), unit: resolveUnit(m[3]), name: m[1].trim() };
+    }
+    m = line.match(/^(\d+(?:\.\d+)?)\s+(?:x\s+)?(.+)$/i);
+    if (m) {
+      return { kind: "item", raw, line, qty: Number(m[1]), unit: "each", name: m[2].trim() };
+    }
+    return { kind: "other", raw, line };
+  }
+
+  function matchRecipe(text, ingredients, dishName) {
+    const lines = String(text || "").split(/\r?\n/);
+    const unmatched = [];
+    const used = new Set();
+    const fills = [];
+    let suggestedTitle = "";
+
+    lines.forEach((raw, index) => {
+      const parsed = parseRecipeLine(raw);
+      if (parsed.kind === "empty") return;
+      if (parsed.kind === "other") {
+        // First unparseable line is treated as the dish title, even if it mentions an ingredient.
+        if (!suggestedTitle && fills.length === 0 && unmatched.length === 0) {
+          suggestedTitle = parsed.line;
+          return;
+        }
+        const maybe = bestIngredient(parsed.line, ingredients);
+        if (maybe) unmatched.push({ line: parsed.line, reason: "couldn't read a quantity" });
+        else unmatched.push({ line: parsed.line, reason: "not in your list, not costed" });
+        return;
+      }
+      const ing = bestIngredient(parsed.name, ingredients);
+      if (!ing) {
+        unmatched.push({ line: parsed.line, reason: "not in your list, not costed" });
+        return;
+      }
+      if (used.has(ing.id)) {
+        unmatched.push({ line: parsed.line, reason: "already matched to " + ing.name });
+        return;
+      }
+      used.add(ing.id);
+      fills.push({ id: ing.id, qty: parsed.qty, qtyUnit: parsed.unit });
+    });
+
+    // If the "title" actually matches an ingredient and we skipped it, leave it.
+    // Only use it as a dish name when the current name is empty.
+    return { fills, unmatched, suggestedTitle: !dishName ? suggestedTitle : "" };
+  }
+
+  function loadStore() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.ingredients) && data.ingredients.length) {
+        state.ingredients = data.ingredients.map((ing) => ({
+          id: ing.id || uid(),
+          name: ing.name || "",
+          priceUnit: UNIT_MAP[ing.priceUnit] ? ing.priceUnit : "kg",
+          price: ing.price ?? "",
+          qty: ing.qty ?? "",
+          qtyUnit: UNIT_MAP[ing.qtyUnit] ? ing.qtyUnit : (UNIT_MAP[ing.priceUnit] ? ing.priceUnit : "g")
+        }));
+      }
+      if (typeof data.dishName === "string") state.dishName = data.dishName;
+      if (typeof data.ocrText === "string") state.ocrText = data.ocrText;
+      if (Array.isArray(data.unmatched)) state.unmatched = data.unmatched;
+      if (typeof data.foodCostPct === "number") state.foodCostPct = data.foodCostPct;
+      if (Array.isArray(data.savedDishes)) state.savedDishes = data.savedDishes;
+    } catch (err) {
+      console.warn("Could not read saved calculator data", err);
+    }
+  }
+
+  function persist() {
+    const payload = {
+      dishName: state.dishName,
+      ingredients: state.ingredients.map((ing) => ({
+        id: ing.id,
+        name: ing.name,
+        priceUnit: ing.priceUnit,
+        price: ing.price,
+        qty: ing.qty,
+        qtyUnit: ing.qtyUnit
+      })),
+      ocrText: state.ocrText,
+      unmatched: state.unmatched,
+      foodCostPct: state.foodCostPct,
+      savedDishes: state.savedDishes
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); }
+    catch (err) { console.warn("Could not save calculator data", err); }
+  }
+
+  function schedulePersist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(persist, 200);
+  }
+
+  function isUnlocked() {
+    if (!EMAIL_GATE) return true;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("lead") === "1") return true;
+      const lead = JSON.parse(localStorage.getItem(LEAD_KEY) || "null");
+      return !!(lead && lead.unlocked);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function unlockCalculator(lead) {
+    let already = false;
+    try {
+      const prev = JSON.parse(localStorage.getItem(LEAD_KEY) || "null");
+      already = !!(prev && prev.unlocked);
+    } catch (e) {}
+    const record = Object.assign({
+      unlocked: true,
+      source: "priced-plate-food-cost-calculator",
+      capturedAt: new Date().toISOString()
+    }, lead || {});
+    try { localStorage.setItem(LEAD_KEY, JSON.stringify(record)); }
+    catch (err) { console.warn(err); }
+    document.documentElement.classList.add("unlocked");
+    if (!already) submitLead(record);
+    if (new URLSearchParams(window.location.search).get("lead") === "1") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("lead");
+      window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+    }
+  }
+
+  function bootGate() {
+    const params = new URLSearchParams(window.location.search);
+    const submitted = params.get("lead") === "1";
+    if (submitted && window.parent && window.parent !== window) {
+      try { localStorage.setItem(LEAD_KEY, JSON.stringify({ unlocked: true, capturedAt: new Date().toISOString(), source: "priced-plate-food-cost-calculator" })); }
+      catch (err) {}
+      window.parent.postMessage({ type: "tpp-lead-submitted" }, window.location.origin);
+      document.documentElement.classList.add("unlocked");
+      return;
+    }
+    if (isUnlocked()) {
+      unlockCalculator();
+      return;
+    }
+    const iframe = document.getElementById("lead-iframe");
+    const fallback = document.getElementById("lead-fallback");
+    if (iframe) iframe.src = MONDAY_FORM_EMBED;
+    if (fallback) fallback.href = MONDAY_FORM_LINK;
+    window.addEventListener("message", (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data && event.data.type === "tpp-lead-submitted") unlockCalculator();
+    });
+  }
+
+  function emptyIngredient(partial) {
+    return Object.assign({
+      id: uid(),
+      name: "",
+      priceUnit: "kg",
+      price: "",
+      qty: "",
+      qtyUnit: "g"
+    }, partial || {});
+  }
+
+  function addIngredient(partial) {
+    state.ingredients.push(emptyIngredient(partial));
+    renderIngredients();
+    renderResults();
+    schedulePersist();
+    const rows = document.querySelectorAll(".ing-name");
+    const last = rows[rows.length - 1];
+    if (last) last.focus();
+  }
+
+  function removeIngredient(id) {
+    state.ingredients = state.ingredients.filter((ing) => ing.id !== id);
+    if (!state.ingredients.length) state.ingredients.push(emptyIngredient());
+    renderIngredients();
+    renderResults();
+    schedulePersist();
+  }
+
+  let rendering = false;
+
+  function readRow(row) {
+    // Replacing the list can fire change on the row being removed; ignore those.
+    if (rendering || !row.isConnected) return;
+    const id = row.dataset.id;
+    const ing = state.ingredients.find((i) => i.id === id);
+    if (!ing) return;
+    ing.name = row.querySelector(".ing-name").value;
+    ing.priceUnit = row.querySelector(".ing-price-unit").value;
+    ing.price = row.querySelector(".ing-price").value;
+    ing.qty = row.querySelector(".ing-qty").value;
+    ing.qtyUnit = row.querySelector(".ing-qty-unit").value;
+    updateRowCost(row, ing);
+    renderResults();
+    schedulePersist();
+  }
+
+  function updateRowCost(row, ing) {
+    const costEl = row.querySelector(".line-cost-value");
+    const msgEl = row.querySelector(".line-msg");
+    const result = lineCost(ing);
+    row.classList.remove("warn", "matched");
+    if (result.error) {
+      row.classList.add("warn");
+      costEl.textContent = "—";
+      msgEl.textContent = result.error;
+      msgEl.hidden = false;
+    } else if (result.value >= 0 && !result.unused && !result.empty) {
+      costEl.textContent = money(roundCents(result.value));
+      msgEl.hidden = true;
+      if (parseNumber(ing.qty) > 0) row.classList.add("matched");
+    } else {
+      costEl.textContent = "—";
+      msgEl.hidden = true;
+    }
+  }
+
+  function renderIngredients() {
+    const root = document.getElementById("ing-list");
+    rendering = true;
+    root.innerHTML = state.ingredients.map((ing) => {
+      return `
+        <div class="ing-row" data-id="${ing.id}">
+          <div class="top">
+            <div>
+              <label class="field-label">Ingredient</label>
+              <input type="text" class="ing-name" value="${escapeAttr(ing.name)}" placeholder="e.g. bacon" autocomplete="off">
+            </div>
+            <button type="button" class="btn btn-danger btn-delete" aria-label="Remove ingredient">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2m-7 0v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7"/></svg>
+            </button>
+          </div>
+          <div class="ing-grid">
+            <div>
+              <label class="field-label">Unit</label>
+              <select class="ing-price-unit">${unitOptions(ing.priceUnit)}</select>
+            </div>
+            <div>
+              <label class="field-label">Cost price</label>
+              <div class="money"><span>$</span><input type="text" class="ing-price" inputmode="decimal" value="${escapeAttr(ing.price)}" placeholder="0.00"></div>
+            </div>
+            <div>
+              <label class="field-label">Qty used</label>
+              <input type="text" class="ing-qty" inputmode="decimal" value="${escapeAttr(ing.qty)}" placeholder="0">
+            </div>
+            <div>
+              <label class="field-label">Qty unit</label>
+              <select class="ing-qty-unit">${unitOptions(ing.qtyUnit)}</select>
+            </div>
+          </div>
+          <div class="line-cost"><span>Cost in this dish</span><strong class="line-cost-value">—</strong></div>
+          <p class="line-msg" hidden></p>
+        </div>`;
+    }).join("");
+
+    try {
+      root.querySelectorAll(".ing-row").forEach((row) => {
+        const ing = state.ingredients.find((i) => i.id === row.dataset.id);
+        if (ing) updateRowCost(row, ing);
+        row.addEventListener("input", () => readRow(row));
+        row.addEventListener("change", () => readRow(row));
+        row.querySelector(".btn-delete").addEventListener("click", () => removeIngredient(row.dataset.id));
+      });
+    } finally {
+      rendering = false;
+    }
+  }
+
+  function escapeAttr(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;");
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function costedLines() {
+    const lines = [];
+    for (const ing of state.ingredients) {
+      const result = lineCost(ing);
+      if (result.empty) continue;
+      if (result.unused) continue;
+      lines.push({
+        id: ing.id,
+        name: ing.name.trim(),
+        qty: parseNumber(ing.qty),
+        qtyUnit: ing.qtyUnit,
+        error: result.error || null,
+        cost: result.error ? null : roundCents(result.value)
+      });
+    }
+    return lines;
+  }
+
+  function renderResults() {
+    const lines = costedLines();
+    const empty = document.getElementById("results-empty");
+    const filled = document.getElementById("results-filled");
+    if (!lines.length) {
+      empty.hidden = false;
+      filled.hidden = true;
+      return;
+    }
+    empty.hidden = true;
+    filled.hidden = false;
+
+    const tbody = document.getElementById("cost-tbody");
+    tbody.innerHTML = "";
+    let total = 0;
+    let hasError = false;
+    lines.forEach((line) => {
+      const tr = document.createElement("tr");
+      const unitMeta = UNIT_MAP[line.qtyUnit] || {};
+      const unitLabel = unitMeta.short || unitMeta.label || line.qtyUnit;
+      const nameTd = document.createElement("td");
+      const costTd = document.createElement("td");
+      const name = document.createElement("div");
+      name.textContent = line.name;
+      const qty = document.createElement("div");
+      qty.className = "qty";
+      qty.textContent = `${line.qty} ${unitLabel}`;
+      nameTd.appendChild(name);
+      nameTd.appendChild(qty);
+      if (line.error) {
+        hasError = true;
+        costTd.textContent = "Check units";
+        const err = document.createElement("div");
+        err.className = "qty";
+        err.textContent = line.error;
+        nameTd.appendChild(err);
+      } else {
+        total = roundCents(total + line.cost);
+        costTd.textContent = money(line.cost);
+      }
+      tr.appendChild(nameTd);
+      tr.appendChild(costTd);
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("total-cost").textContent = hasError && !lines.some((l) => l.cost != null) ? "—" : money(total);
+    const pct = Number(state.foodCostPct) || DEFAULT_FOOD_COST_PCT;
+    document.getElementById("food-cost-pct").value = String(pct);
+    document.getElementById("food-cost-pct-label").textContent = pct + "%";
+    const usableTotal = lines.reduce((s, l) => s + (l.cost || 0), 0);
+    const sellEx = pct > 0 ? roundCents(usableTotal / (pct / 100)) : 0;
+    const sellInc = roundCents(sellEx * (1 + GST_RATE));
+    document.getElementById("sell-ex").textContent = money(sellEx);
+    document.getElementById("sell-inc").textContent = money(sellInc);
+  }
+
+  function renderUnmatched() {
+    const box = document.getElementById("unmatched");
+    const list = document.getElementById("unmatched-list");
+    list.innerHTML = "";
+    if (!state.unmatched.length) {
+      box.classList.remove("visible");
+      return;
+    }
+    box.classList.add("visible");
+    state.unmatched.forEach((item) => {
+      const li = document.createElement("li");
+      li.appendChild(document.createTextNode(item.line + " — "));
+      const why = document.createElement("span");
+      why.className = "why";
+      why.textContent = item.reason;
+      li.appendChild(why);
+      list.appendChild(li);
+    });
+  }
+
+  function renderSavedDishes() {
+    const sel = document.getElementById("saved-dishes");
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Saved dishes</option>';
+    state.savedDishes.forEach((dish, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = dish.name || ("Saved dish " + (i + 1));
+      sel.appendChild(opt);
+    });
+    if (current && Number(current) < state.savedDishes.length) sel.value = current;
+  }
+
+  function applyMatch(text) {
+    const result = matchRecipe(text, state.ingredients, state.dishName);
+    result.fills.forEach((fill) => {
+      const ing = state.ingredients.find((i) => i.id === fill.id);
+      if (!ing) return;
+      ing.qty = String(fill.qty);
+      ing.qtyUnit = fill.qtyUnit;
+    });
+    // Clear qty on ingredients that were not matched this time? Keep existing typed values
+    // unless they came from a previous match and the line disappeared — keep it simple and only fill matches.
+    state.unmatched = result.unmatched;
+    if (result.suggestedTitle && !state.dishName.trim()) {
+      state.dishName = result.suggestedTitle;
+      document.getElementById("dish-name").value = state.dishName;
+    }
+    renderIngredients();
+    renderUnmatched();
+    renderResults();
+    schedulePersist();
+    return result;
+  }
+
+  function setProgress(visible, label, fraction) {
+    const wrap = document.getElementById("ocr-progress");
+    const text = document.getElementById("ocr-progress-label");
+    const bar = document.getElementById("ocr-bar");
+    wrap.classList.toggle("visible", visible);
+    if (label) text.textContent = label;
+    if (typeof fraction === "number") bar.style.width = Math.round(Math.max(0, Math.min(1, fraction)) * 100) + "%";
+  }
+
+  function preprocessImage(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        try {
+          const minSide = 1800;
+          const scale = Math.max(2, minSide / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, w, h);
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(img, 0, 0, w, h);
+          const imageData = ctx.getImageData(0, 0, w, h);
+          const d = imageData.data;
+          const factor = 1.35;
+          for (let i = 0; i < d.length; i += 4) {
+            const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+            let v = (g - 128) * factor + 128;
+            v = v < 0 ? 0 : v > 255 ? 255 : v;
+            d[i] = d[i + 1] = d[i + 2] = v;
+          }
+          ctx.putImageData(imageData, 0, 0);
+          URL.revokeObjectURL(url);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Could not process the photo"));
+          }, "image/png");
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          reject(err);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not open that image"));
+      };
+      img.src = url;
+    });
+  }
+
+  async function getWorker() {
+    if (tesseractWorker) return tesseractWorker;
+    tesseractWorker = await Tesseract.createWorker("eng", 1, {
+      logger: (m) => {
+        if (!state.ocrBusy) return;
+        if (m.status === "recognizing text") {
+          setProgress(true, "Reading the recipe… " + Math.round((m.progress || 0) * 100) + "%", m.progress || 0);
+        } else if (m.status) {
+          setProgress(true, "Preparing the reader…", m.progress ? 0.15 * m.progress : 0.08);
+        }
+      }
+    });
+    await tesseractWorker.setParameters({
+      tessedit_pageseg_mode: "6"
+    });
+    return tesseractWorker;
+  }
+
+  async function readRecipeFile(file) {
+    state.ocrBusy = true;
+    document.getElementById("btn-camera").disabled = true;
+    setProgress(true, "Preparing the reader…", 0.05);
+    try {
+      const processed = await preprocessImage(file);
+      const worker = await getWorker();
+      const result = await worker.recognize(processed);
+      const text = (result && result.data && result.data.text) ? result.data.text : "";
+      state.ocrText = text.trim();
+      document.getElementById("ocr-text").value = state.ocrText;
+      document.getElementById("ocr-box").classList.add("visible");
+      applyMatch(state.ocrText);
+      setProgress(true, "Recipe read. Check the quantities below.", 1);
+      setTimeout(() => setProgress(false), 1200);
+    } catch (err) {
+      console.warn(err);
+      setProgress(true, "Couldn’t read that photo. Type the recipe below and press Re-match.", 0);
+      document.getElementById("ocr-box").classList.add("visible");
+    } finally {
+      state.ocrBusy = false;
+      document.getElementById("btn-camera").disabled = false;
+    }
+  }
+
+  function showPhoto(file) {
+    if (state.photoUrl) URL.revokeObjectURL(state.photoUrl);
+    state.photoUrl = URL.createObjectURL(file);
+    state.photoName = file.name || "Recipe photo";
+    const preview = document.getElementById("photo-preview");
+    document.getElementById("photo-thumb").src = state.photoUrl;
+    document.getElementById("photo-name").textContent = state.photoName;
+    preview.classList.add("visible");
+  }
+
+  function clearPhoto() {
+    if (state.photoUrl) URL.revokeObjectURL(state.photoUrl);
+    state.photoUrl = "";
+    state.photoName = "";
+    document.getElementById("recipe-file").value = "";
+    document.getElementById("photo-preview").classList.remove("visible");
+    document.getElementById("photo-thumb").removeAttribute("src");
+  }
+
+  function saveCurrentDish() {
+    const name = state.dishName.trim() || "Untitled dish";
+    const snapshot = {
+      name,
+      savedAt: new Date().toISOString(),
+      dishName: state.dishName,
+      ingredients: state.ingredients.map((ing) => ({ ...ing })),
+      ocrText: state.ocrText,
+      unmatched: state.unmatched.slice(),
+      foodCostPct: state.foodCostPct
+    };
+    const existing = state.savedDishes.findIndex((d) => normalizeName(d.name) === normalizeName(name));
+    if (existing >= 0) state.savedDishes[existing] = snapshot;
+    else state.savedDishes.push(snapshot);
+    persist();
+    renderSavedDishes();
+    const msg = document.getElementById("save-msg");
+    msg.textContent = "Saved “" + name + "” on this device.";
+    msg.classList.add("visible");
+    setTimeout(() => { msg.classList.remove("visible"); msg.textContent = ""; }, 3500);
+  }
+
+  function loadDish(index) {
+    const dish = state.savedDishes[index];
+    if (!dish) return;
+    state.dishName = dish.dishName || dish.name || "";
+    state.ingredients = (dish.ingredients || []).map((ing) => ({
+      id: ing.id || uid(),
+      name: ing.name || "",
+      priceUnit: UNIT_MAP[ing.priceUnit] ? ing.priceUnit : "kg",
+      price: ing.price ?? "",
+      qty: ing.qty ?? "",
+      qtyUnit: UNIT_MAP[ing.qtyUnit] ? ing.qtyUnit : "g"
+    }));
+    if (!state.ingredients.length) state.ingredients.push(emptyIngredient());
+    state.ocrText = dish.ocrText || "";
+    state.unmatched = dish.unmatched || [];
+    state.foodCostPct = dish.foodCostPct || DEFAULT_FOOD_COST_PCT;
+    document.getElementById("dish-name").value = state.dishName;
+    document.getElementById("ocr-text").value = state.ocrText;
+    if (state.ocrText) document.getElementById("ocr-box").classList.add("visible");
+    renderIngredients();
+    renderUnmatched();
+    renderResults();
+    persist();
+  }
+
+  function newDish() {
+    const hasWork = state.dishName.trim() || state.ingredients.some((i) => String(i.qty).trim());
+    if (hasWork && !window.confirm("Start a new dish? The ingredient list and prices are kept.")) return;
+    state.dishName = "";
+    state.ingredients = state.ingredients.map((ing) => ({ ...ing, qty: "" }));
+    state.ocrText = "";
+    state.unmatched = [];
+    document.getElementById("dish-name").value = "";
+    document.getElementById("ocr-text").value = "";
+    document.getElementById("ocr-box").classList.remove("visible");
+    clearPhoto();
+    renderIngredients();
+    renderUnmatched();
+    renderResults();
+    persist();
+  }
+
+  function bind() {
+    document.getElementById("dish-name").addEventListener("input", (e) => {
+      state.dishName = e.target.value;
+      schedulePersist();
+    });
+    document.getElementById("btn-add").addEventListener("click", () => addIngredient());
+    document.getElementById("btn-camera").addEventListener("click", () => {
+      document.getElementById("recipe-file").click();
+    });
+    document.getElementById("recipe-file").addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      showPhoto(file);
+      readRecipeFile(file);
+    });
+    document.getElementById("btn-clear-photo").addEventListener("click", clearPhoto);
+    document.getElementById("btn-rematch").addEventListener("click", () => {
+      state.ocrText = document.getElementById("ocr-text").value;
+      applyMatch(state.ocrText);
+    });
+    document.getElementById("food-cost-pct").addEventListener("input", (e) => {
+      state.foodCostPct = Number(e.target.value) || DEFAULT_FOOD_COST_PCT;
+      renderResults();
+      schedulePersist();
+    });
+    document.getElementById("btn-save").addEventListener("click", saveCurrentDish);
+    document.getElementById("btn-new").addEventListener("click", newDish);
+    document.getElementById("btn-print").addEventListener("click", () => window.print());
+    document.getElementById("btn-load").addEventListener("click", () => {
+      const i = document.getElementById("saved-dishes").value;
+      if (i === "") return;
+      loadDish(Number(i));
+    });
+    document.getElementById("btn-delete-saved").addEventListener("click", () => {
+      const i = document.getElementById("saved-dishes").value;
+      if (i === "") return;
+      const dish = state.savedDishes[Number(i)];
+      if (!dish) return;
+      if (!window.confirm("Delete “" + (dish.name || "this dish") + "” from this device?")) return;
+      state.savedDishes.splice(Number(i), 1);
+      persist();
+      renderSavedDishes();
+    });
+  }
+
+  window.__tpp = {
+    parseRecipeLine,
+    matchRecipe,
+    lineCost,
+    convertQty,
+    applyMatch,
+    state,
+    money,
+    roundCents,
+    isUnlocked,
+    unlockCalculator
+  };
+
+  bootGate();
+  loadStore();
+  if (!state.ingredients.length) {
+    state.ingredients.push(emptyIngredient());
+  }
+  document.getElementById("dish-name").value = state.dishName;
+  document.getElementById("food-cost-pct").value = String(state.foodCostPct);
+  if (state.ocrText) {
+    document.getElementById("ocr-text").value = state.ocrText;
+    document.getElementById("ocr-box").classList.add("visible");
+  }
+  bind();
+  renderIngredients();
+  renderUnmatched();
+  renderSavedDishes();
+  renderResults();
+  </script>
+</body>
+</html>
