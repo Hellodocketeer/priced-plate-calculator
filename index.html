@@ -1002,8 +1002,11 @@
 
   function startNewDish() {
     state.dishName = "";
-    state.ingredients = state.ingredients.map((ing) => Object.assign({}, ing, { qty: "" }));
+    state.ingredients = [emptyIngredient()];
+    state.foodCostPct = FOOD_COST_PCT;
     document.getElementById("dish-name").value = "";
+    document.getElementById("food-cost-pct").value = String(FOOD_COST_PCT);
+    document.getElementById("food-cost-pct-label").textContent = FOOD_COST_PCT + "%";
     renderSuppliers();
     renderRecipe();
     renderResults();
