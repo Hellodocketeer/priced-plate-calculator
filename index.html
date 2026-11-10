@@ -26,7 +26,6 @@
       --radius: 12px;
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       background: var(--cream);
@@ -147,20 +146,16 @@
       background: var(--white);
     }
 
-    .toolbar {
+    .actions {
+      margin-top: 1.15rem;
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.35rem;
+      flex-direction: column;
+      gap: 0.6rem;
     }
-    .saved-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.85rem;
-      align-items: center;
+    .actions .btn { width: 100%; }
+    @media (min-width: 760px) {
+      .actions { max-width: 16rem; }
     }
-    .saved-row select { flex: 1 1 180px; background: var(--white); }
 
     .btn {
       display: inline-flex;
@@ -293,24 +288,6 @@
       vertical-align: top;
     }
     .cost-table .qty { color: var(--muted); font-size: 0.9rem; }
-    .total-row td {
-      border-bottom: 0;
-      padding-top: 0.85rem;
-      font-weight: 700;
-      color: var(--navy);
-      font-size: 1.05rem;
-    }
-    .slider-row { margin: 0.4rem 0 1.1rem; }
-    .slider-row .scale {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 0.35rem;
-    }
-    input[type="range"] {
-      width: 100%;
-      accent-color: var(--gold);
-    }
     .result-lines {
       margin-top: 0.35rem;
       display: flex;
@@ -448,7 +425,7 @@
     @media print {
       body { background: white; }
       .site-header { background: white; color: var(--navy); padding: 0 0 0.8rem; }
-      .site-header .tagline, .no-print, .btn, .add-wrap, .toolbar, .saved-row,
+      .site-header .tagline, .no-print, .btn, .add-wrap, .actions,
       .btn-danger { display: none !important; }
       .card { box-shadow: none; border: 0; padding: 0; margin: 0 0 1rem; break-inside: avoid; }
       .sup-row, .recipe-row { border: 0; padding: 0; background: transparent; }
@@ -503,16 +480,7 @@
 
     <section class="card dish-name" aria-labelledby="dish-label">
       <label class="field-label" id="dish-label" for="dish-name">Dish name</label>
-      <p class="hint">Give this plate a name so you can save it and find it later.</p>
       <input type="text" id="dish-name" placeholder="e.g. Bacon &amp; Egg Roll" autocomplete="off">
-      <div class="saved-row no-print">
-        <label class="visually-hidden" for="saved-dishes">Saved dishes</label>
-        <select id="saved-dishes" aria-label="Saved dishes">
-          <option value="">Saved dishes</option>
-        </select>
-        <button type="button" class="btn btn-ghost" id="btn-load">Load</button>
-        <button type="button" class="btn btn-ghost" id="btn-delete-saved">Delete</button>
-      </div>
     </section>
 
     <section class="card" aria-labelledby="supplier-heading">
@@ -555,23 +523,11 @@
               <span class="amount" id="sell-ex">$0.00</span>
             </div>
           </div>
-          <div class="slider-row no-print">
-            <div class="scale">
-              <label class="field-label" for="food-cost-pct" style="margin:0">Food cost target</label>
-              <strong id="food-cost-pct-label">30%</strong>
-            </div>
-            <input type="range" id="food-cost-pct" min="15" max="50" step="1" value="30">
-          </div>
         </div>
-        <div class="toolbar no-print" style="margin-top:1.15rem">
-          <button type="button" class="btn btn-gold" id="btn-save">Save dish</button>
-          <button type="button" class="btn btn-ghost" id="btn-new">New dish</button>
-          <button type="button" class="btn btn-ghost" id="btn-print">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v7H6v-7z"/></svg>
-            Print / save PDF
-          </button>
+        <div class="actions no-print">
+          <button type="button" class="btn btn-gold" id="btn-print">Save PDF</button>
+          <button type="button" class="btn btn-ghost" id="btn-new">Start new dish</button>
         </div>
-        <p class="form-error" id="save-msg" style="color:var(--navy); display:none"></p>
       </div>
     </section>
   </main>
@@ -591,9 +547,9 @@
   const MONDAY_FORM_EMBED = "https://forms.monday.com/forms/embed/fcec2f109acc7703ff54bda7f7e9688b?r=apse2";
   const MONDAY_FORM_LINK = "https://wkf.ms/4iPuClr";
   const LEAD_ENDPOINT = "";
-  const DEFAULT_FOOD_COST_PCT = 30;
-  const STORAGE_KEY = "tpp-food-cost-calculator-v1";
+  const FOOD_COST_PCT = 30;
   const LEAD_KEY = "tpp-food-cost-calculator-unlocked-v2";
+  const OLD_STORAGE_KEY = "tpp-food-cost-calculator-v1";
 
   /**
    * Hook for the mailing list. Called after a valid lead is captured.
@@ -626,12 +582,9 @@
 
   const state = {
     dishName: "",
-    ingredients: [],
-    foodCostPct: DEFAULT_FOOD_COST_PCT,
-    savedDishes: []
+    ingredients: []
   };
 
-  let saveTimer = 0;
   let rendering = false;
 
   function uid() {
@@ -681,25 +634,6 @@
     return DEFAULT_QTY_UNIT[pack.group] || pack.value;
   }
 
-  function migrateIngredient(ing) {
-    const packUnit = UNIT_MAP[ing.packUnit] ? ing.packUnit : (UNIT_MAP[ing.priceUnit] ? ing.priceUnit : "kg");
-    const packSize = (ing.packSize !== undefined && ing.packSize !== null && ing.packSize !== "")
-      ? ing.packSize
-      : "1";
-    const packPrice = (ing.packPrice !== undefined && ing.packPrice !== null && ing.packPrice !== "")
-      ? ing.packPrice
-      : (ing.price ?? "");
-    return {
-      id: ing.id || uid(),
-      name: ing.name || "",
-      packSize,
-      packUnit,
-      packPrice,
-      qty: ing.qty ?? "",
-      qtyUnit: compatibleQtyUnit(packUnit, ing.qtyUnit)
-    };
-  }
-
   function packUnitCost(ing) {
     const size = parseNumber(ing.packSize);
     const price = parseNumber(ing.packPrice);
@@ -734,59 +668,6 @@
     }
     if (converted.error) return { error: "Check the units on this line." };
     return { value: (converted.value / size) * price, qty, qtyUnit: ing.qtyUnit, packUnit: ing.packUnit };
-  }
-
-  function normalizeName(s) {
-    return String(s || "")
-      .toLowerCase()
-      .replace(/&/g, " and ")
-      .replace(/[^a-z0-9\s]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function loadStore() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      if (Array.isArray(data.ingredients) && data.ingredients.length) {
-        state.ingredients = data.ingredients.map(migrateIngredient);
-      }
-      if (typeof data.dishName === "string") state.dishName = data.dishName;
-      if (typeof data.foodCostPct === "number") state.foodCostPct = data.foodCostPct;
-      if (Array.isArray(data.savedDishes)) {
-        state.savedDishes = data.savedDishes.map((dish) => Object.assign({}, dish, {
-          ingredients: (dish.ingredients || []).map(migrateIngredient)
-        }));
-      }
-    } catch (err) {
-      console.warn("Could not read saved calculator data", err);
-    }
-  }
-
-  function persist() {
-    const payload = {
-      dishName: state.dishName,
-      ingredients: state.ingredients.map((ing) => ({
-        id: ing.id,
-        name: ing.name,
-        packSize: ing.packSize,
-        packUnit: ing.packUnit,
-        packPrice: ing.packPrice,
-        qty: ing.qty,
-        qtyUnit: ing.qtyUnit
-      })),
-      foodCostPct: state.foodCostPct,
-      savedDishes: state.savedDishes
-    };
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); }
-    catch (err) { console.warn("Could not save calculator data", err); }
-  }
-
-  function schedulePersist() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(persist, 200);
   }
 
   function isUnlocked() {
@@ -865,7 +746,6 @@
     renderSuppliers();
     renderRecipe();
     renderResults();
-    schedulePersist();
     const rows = document.querySelectorAll(".ing-name");
     const last = rows[rows.length - 1];
     if (last) last.focus();
@@ -877,7 +757,6 @@
     renderSuppliers();
     renderRecipe();
     renderResults();
-    schedulePersist();
   }
 
   function readSupplierRow(row) {
@@ -898,7 +777,6 @@
     }
     updateSupplierMeta(row, ing);
     renderResults();
-    schedulePersist();
   }
 
   function readRecipeRow(row) {
@@ -909,7 +787,6 @@
     ing.qtyUnit = row.querySelector(".ing-qty-unit").value;
     updateRecipeMeta(row, ing);
     renderResults();
-    schedulePersist();
   }
 
   function updateSupplierMeta(row, ing) {
@@ -1094,102 +971,28 @@
     });
 
     document.getElementById("total-cost").textContent = hasError && !lines.some((l) => l.cost != null) ? "—" : money(total);
-    const pct = Number(state.foodCostPct) || DEFAULT_FOOD_COST_PCT;
-    document.getElementById("food-cost-pct").value = String(pct);
-    document.getElementById("food-cost-pct-label").textContent = pct + "%";
     const usableTotal = lines.reduce((s, l) => s + (l.cost || 0), 0);
-    const sellEx = pct > 0 ? roundCents(usableTotal / (pct / 100)) : 0;
+    const sellEx = roundCents(usableTotal / (FOOD_COST_PCT / 100));
     document.getElementById("sell-ex").textContent = money(sellEx);
   }
 
-  function renderSavedDishes() {
-    const sel = document.getElementById("saved-dishes");
-    const current = sel.value;
-    sel.innerHTML = '<option value="">Saved dishes</option>';
-    state.savedDishes.forEach((dish, i) => {
-      const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = dish.name || ("Saved dish " + (i + 1));
-      sel.appendChild(opt);
-    });
-    if (current && Number(current) < state.savedDishes.length) sel.value = current;
-  }
-
-  function saveCurrentDish() {
-    const name = state.dishName.trim() || "Untitled dish";
-    const snapshot = {
-      name,
-      savedAt: new Date().toISOString(),
-      dishName: state.dishName,
-      ingredients: state.ingredients.map((ing) => Object.assign({}, ing)),
-      foodCostPct: state.foodCostPct
-    };
-    const existing = state.savedDishes.findIndex((d) => normalizeName(d.name) === normalizeName(name));
-    if (existing >= 0) state.savedDishes[existing] = snapshot;
-    else state.savedDishes.push(snapshot);
-    persist();
-    renderSavedDishes();
-    const msg = document.getElementById("save-msg");
-    msg.textContent = "Saved “" + name + "” on this device.";
-    msg.style.display = "block";
-    setTimeout(() => { msg.style.display = "none"; msg.textContent = ""; }, 3500);
-  }
-
-  function loadDish(index) {
-    const dish = state.savedDishes[index];
-    if (!dish) return;
-    state.dishName = dish.dishName || dish.name || "";
-    state.ingredients = (dish.ingredients || []).map(migrateIngredient);
-    if (!state.ingredients.length) state.ingredients.push(emptyIngredient());
-    state.foodCostPct = dish.foodCostPct || DEFAULT_FOOD_COST_PCT;
-    document.getElementById("dish-name").value = state.dishName;
-    renderSuppliers();
-    renderRecipe();
-    renderResults();
-    persist();
-  }
-
-  function newDish() {
-    const hasWork = state.dishName.trim() || state.ingredients.some((i) => String(i.qty).trim());
-    if (hasWork && !window.confirm("Start a new dish? The ingredient list and prices are kept.")) return;
+  function startNewDish() {
     state.dishName = "";
     state.ingredients = state.ingredients.map((ing) => Object.assign({}, ing, { qty: "" }));
     document.getElementById("dish-name").value = "";
     renderSuppliers();
     renderRecipe();
     renderResults();
-    persist();
+    window.scrollTo(0, 0);
   }
 
   function bind() {
     document.getElementById("dish-name").addEventListener("input", (e) => {
       state.dishName = e.target.value;
-      schedulePersist();
     });
     document.getElementById("btn-add").addEventListener("click", () => addIngredient());
-    document.getElementById("food-cost-pct").addEventListener("input", (e) => {
-      state.foodCostPct = Number(e.target.value) || DEFAULT_FOOD_COST_PCT;
-      renderResults();
-      schedulePersist();
-    });
-    document.getElementById("btn-save").addEventListener("click", saveCurrentDish);
-    document.getElementById("btn-new").addEventListener("click", newDish);
     document.getElementById("btn-print").addEventListener("click", () => window.print());
-    document.getElementById("btn-load").addEventListener("click", () => {
-      const i = document.getElementById("saved-dishes").value;
-      if (i === "") return;
-      loadDish(Number(i));
-    });
-    document.getElementById("btn-delete-saved").addEventListener("click", () => {
-      const i = document.getElementById("saved-dishes").value;
-      if (i === "") return;
-      const dish = state.savedDishes[Number(i)];
-      if (!dish) return;
-      if (!window.confirm("Delete “" + (dish.name || "this dish") + "” from this device?")) return;
-      state.savedDishes.splice(Number(i), 1);
-      persist();
-      renderSavedDishes();
-    });
+    document.getElementById("btn-new").addEventListener("click", startNewDish);
   }
 
   window.__tpp = {
@@ -1201,20 +1004,19 @@
     money,
     roundCents,
     isUnlocked,
-    unlockCalculator
+    unlockCalculator,
+    startNewDish
   };
 
   bootGate();
-  loadStore();
+  try { localStorage.removeItem(OLD_STORAGE_KEY); } catch (e) {}
   if (!state.ingredients.length) {
     state.ingredients.push(emptyIngredient());
   }
   document.getElementById("dish-name").value = state.dishName;
-  document.getElementById("food-cost-pct").value = String(state.foodCostPct);
   bind();
   renderSuppliers();
   renderRecipe();
-  renderSavedDishes();
   renderResults();
   </script>
 </body>
