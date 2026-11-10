@@ -496,8 +496,8 @@
     <section class="how no-print" aria-labelledby="how-heading">
       <h2 id="how-heading">How it works</h2>
       <ol>
-        <li>Add your supplier prices: ingredient, pack size, unit, pack price.</li>
         <li>Name your dish.</li>
+        <li>Add your supplier prices: ingredient, pack size, unit, pack price.</li>
         <li>Enter how much of each ingredient the dish uses.</li>
         <li>See your dish cost and the price to charge for 30% food cost.</li>
       </ol>
@@ -627,10 +627,11 @@
     { value: "kg", label: "kg", short: "kg", group: "mass", toBase: 1000 },
     { value: "ml", label: "mL", short: "mL", group: "volume", toBase: 1 },
     { value: "l", label: "litre", short: "L", group: "volume", toBase: 1000 },
-    { value: "each", label: "each", short: "each", group: "count", toBase: 1 }
+    { value: "each", label: "each", short: "each", group: "count", toBase: 1 },
+    { value: "box", label: "box", short: "box", group: "box", toBase: 1 }
   ];
   const UNIT_MAP = Object.fromEntries(UNITS.map((u) => [u.value, u]));
-  const DEFAULT_QTY_UNIT = { mass: "g", volume: "ml", count: "each" };
+  const DEFAULT_QTY_UNIT = { mass: "g", volume: "ml", count: "each", box: "box" };
 
   const state = {
     dishName: "",
