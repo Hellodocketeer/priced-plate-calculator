@@ -311,33 +311,32 @@
       width: 100%;
       accent-color: var(--gold);
     }
-    .sell-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
+    .result-lines {
+      margin-top: 0.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
     }
-    .sell {
-      border: 1px solid var(--stone);
-      background: var(--cream);
-      border-radius: 10px;
-      padding: 0.9rem 1rem 1rem;
-    }
-    .sell .which {
-      font-size: 0.72rem;
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
       font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--gold);
-      margin: 0 0 0.2rem;
-    }
-    .sell .amount {
-      font-family: var(--serif);
-      font-size: 2rem;
       color: var(--navy);
-      line-height: 1.1;
-      font-variant-numeric: tabular-nums;
+      font-size: 1.15rem;
     }
-    .sell p { margin: 0.3rem 0 0; font-size: 0.85rem; color: var(--muted); }
+    .result-line .amount {
+      font-family: var(--serif);
+      font-size: 1.7rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+    .result-line.sell-line {
+      padding-top: 0.55rem;
+      border-top: 1px solid var(--stone);
+    }
+    .result-line.sell-line .amount { font-size: 2rem; }
     .empty-results { color: var(--muted); margin: 0; }
 
     .site-footer {
@@ -443,7 +442,6 @@
       .recipe-name { margin: 0 0 0.35rem; }
       .recipe-grid { display: contents; }
       .recipe-row .line-msg { grid-column: 1 / -1; }
-      .sell-grid { grid-template-columns: 1fr 1fr; }
       .btn-add { width: auto; min-width: 16rem; }
     }
 
@@ -538,7 +536,6 @@
     <section class="card" id="results-card" aria-labelledby="results-heading">
       <p class="section-label">This dish</p>
       <h2 id="results-heading">Cost and sell price</h2>
-      <p class="hint">What it costs to make, and what to charge so food cost lands at your target (30% to start).</p>
       <div id="results-body">
         <p class="empty-results" id="results-empty">Add how much this dish uses to see the cost.</p>
         <div id="results-filled" hidden>
@@ -547,28 +544,23 @@
               <tr><th>Ingredient</th><th>Cost</th></tr>
             </thead>
             <tbody id="cost-tbody"></tbody>
-            <tfoot>
-              <tr class="total-row"><td>Total cost to make</td><td id="total-cost"></td></tr>
-            </tfoot>
           </table>
+          <div class="result-lines">
+            <div class="result-line">
+              <span>Food cost</span>
+              <span class="amount" id="total-cost">$0.00</span>
+            </div>
+            <div class="result-line sell-line">
+              <span>Sell price</span>
+              <span class="amount" id="sell-ex">$0.00</span>
+            </div>
+          </div>
           <div class="slider-row no-print">
             <div class="scale">
               <label class="field-label" for="food-cost-pct" style="margin:0">Food cost target</label>
               <strong id="food-cost-pct-label">30%</strong>
             </div>
             <input type="range" id="food-cost-pct" min="15" max="50" step="1" value="30">
-          </div>
-          <div class="sell-grid">
-            <div class="sell">
-              <p class="which">Recommended sell price, ex GST</p>
-              <div class="amount" id="sell-ex">$0.00</div>
-              <p>The price that meets the food cost target, before GST.</p>
-            </div>
-            <div class="sell">
-              <p class="which">Recommended sell price, inc GST (10%)</p>
-              <div class="amount" id="sell-inc">$0.00</div>
-              <p>The same price with 10% GST added.</p>
-            </div>
           </div>
         </div>
         <div class="toolbar no-print" style="margin-top:1.15rem">
@@ -600,7 +592,6 @@
   const MONDAY_FORM_LINK = "https://wkf.ms/4iPuClr";
   const LEAD_ENDPOINT = "";
   const DEFAULT_FOOD_COST_PCT = 30;
-  const GST_RATE = 0.10;
   const STORAGE_KEY = "tpp-food-cost-calculator-v1";
   const LEAD_KEY = "tpp-food-cost-calculator-unlocked-v2";
 
@@ -1108,9 +1099,7 @@
     document.getElementById("food-cost-pct-label").textContent = pct + "%";
     const usableTotal = lines.reduce((s, l) => s + (l.cost || 0), 0);
     const sellEx = pct > 0 ? roundCents(usableTotal / (pct / 100)) : 0;
-    const sellInc = roundCents(sellEx * (1 + GST_RATE));
     document.getElementById("sell-ex").textContent = money(sellEx);
-    document.getElementById("sell-inc").textContent = money(sellInc);
   }
 
   function renderSavedDishes() {
